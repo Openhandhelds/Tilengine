@@ -1,0 +1,42 @@
+CC       = gcc
+SOURCES  = $(filter-out Test.c,$(wildcard *.c))
+OBJECTS  = $(SOURCES:.c=.o)
+INCPATH  = ../include
+
+# MinGW specific flags
+LIBS = -lSDL2 -lz -lpng
+BIN  = libTilengine.dll
+LDFLAGS = -shared -s
+ifeq ($(MSYSTEM),MINGW64)
+	CFLAGS = -m64 -msse2
+	LIBPATH = ../lib/mingw64
+endif
+
+ifeq ($(MSYSTEM),MINGW32)
+	CFLAGS = -m32 -msse2
+	LIBPATH = ../lib/mingw32
+endif
+
+RM = rm -f
+
+# common flags
+CFLAGS += -I$(INCPATH) -std=c99 -O2 -fpic -DLIB_EXPORTS
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before $(BIN) all-after
+
+clean: clean-custom
+	${RM} $(OBJECTS) $(BIN) Test
+
+$(BIN): $(OBJECTS)
+	$(CC) -shared $(OBJECTS) -o $(BIN) $(LIBS) -fvisibility=hidden
+	mkdir -p $(LIBPATH)
+	cp $(BIN) $(LIBPATH)
+
+Test: Test.c
+	$(RM) Test.o Test
+	$(CC) Test.c -o Test -I$(INCPATH) -L$(LIBPATH) -lTilengine -Wl,-rpath,$(LIBPATH)
+
+%.o: %.c
+	$(CC) -c $(CFLAGS) $< -o $@
