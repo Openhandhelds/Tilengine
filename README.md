@@ -2,8 +2,6 @@
 # Tilengine - The 2D retro graphics engine
 [![License: MPL 2.0](https://img.shields.io/badge/License-MPL%202.0-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0)
 [![Build Status](https://travis-ci.org/megamarc/Tilengine.svg?branch=master)](https://travis-ci.org/megamarc/Tilengine)
-[![Build status](https://ci.appveyor.com/api/projects/status/yvx7koa32qyjm1b0?svg=true)](https://ci.appveyor.com/project/megamarc/tilengine)
-[![Coverity Scan](https://scan.coverity.com/projects/16964/badge.svg)](https://scan.coverity.com/projects/megamarc-tilengine)
 
 Tilengine is an open source, cross-platform 2D graphics engine for creating classic/retro games with tile maps, sprites and palettes. Its unique scanline-based rendering algorithm makes raster effects a core feature, a technique used by many games running on real 2D graphics chips.
 
@@ -16,17 +14,12 @@ http://www.tilengine.org
 - [Getting binaries](#getting-binaries)
   - [Download from itch.io](#download-from-itchio)
   - [Build from source](#build-from-source)
-    - [Windows](#windows)
-    - [Linux/OSX](#linuxosx)
-- [Installing](#installing)
-  - [Windows](#windows-1)
-  - [Debian-based linux](#debian-based-linux)
 - [Running the samples](#running-the-samples)
-  - [Windows](#windows-2)
+  - [Windows](#windows)
   - [Unix-like](#unix-like)
 - [The tilengine window](#the-tilengine-window)
 - [Creating your first program](#creating-your-first-program)
-  - [Windows](#windows-3)
+  - [Windows](#windows-1)
   - [Linux](#linux)
   - [Apple OS X](#apple-os-x)
 - [Documentation](#documentation)
@@ -56,37 +49,28 @@ http://www.tilengine.org
 # Getting binaries
 
 ## Download from itch.io
-The best way to get prebuilt binaries ready to run is grabbing them from official itch.io account: https://megamarc.itch.io/tilengine. Just download the package for your platform.
+The recommended way to get prebuilt binaries ready to install, run and test samples is grabbing them from official [itch.io download](https://megamarc.itch.io/tilengine.account). Just download the package for your platform, they contain required dependencies to run.
 
 ## Build from source
-You can also build the library from source. It's very easy:
+You can also build the library from source. Tilengine requires `SDL2` and `libpng` to build, you must provide these libraries yourself depending on your target platform.
+
 ### Windows
-Open the `/Tilengine.sln` project, you'll need Visual Studio Community. x86 and x64 targets provided.
-### Linux/OSX
-**Prerequisites**: you'll need GNU Make and GCC toolchain, and development libraries for png and SDL2. To install required packages, open a terminal window and run the following command:
-```
-> sudo apt-get install build-essential libpng-dev libsdl2-dev
-```
-To build the library itself, open a terminal window in `/src` and run the following command:
-```
-> make
-```
-After build, `libTilengine.so` file will be placed in `/Tilengine/lib` folder.
+You must provide development libraries:
+* SDL: https://www.libsdl.org/download-2.0.php
+* libpng: http://gnuwin32.sourceforge.net/packages/libpng.htm
 
-# Installing
-After building from source, open a console window in Tilengine root directory and type the suitable command depending on your platform:
+Put the following files inside the `src` directory:
+Path | Files
+-----|---------------------------------------
+`src\libpng`             | libpng headers
+`src\libpng\$(Platform)` | libpng.lib import library
+`src\sdl\SDL2`           | SDL2 headers
+`src\sdl\lib\$(Platform)`| SDL2.lib import library
 
-## Windows
-```
-> install
-```
+**NOTE**: If you're having problems setting up these dependencies, you can download them already pre-packaged from [itch.io downloads](https://megamarc.itch.io/tilengine), file is `windows_libs.zip`. It contains headers and libraries for both 32 and 64 bit platforms.
 
-## Debian-based linux
-```
-> sudo ./install
-```
-
-**Note for OS X users**: Tilengine depends on having SDL2 in Framework format installed on your system, that by default is not installed. Please download it here: https://www.libsdl.org/release/SDL2-2.0.5.dmg. Homebrew port won't work, use the official DMG file instead.
+### Debian-based linux
+Just install standard packages `libpng-dev` and `libsdl2-dev`
 
 # Running the samples
 
@@ -174,14 +158,12 @@ http://www.tilengine.org/doc
 
 # Editing assets
 Tilengine is just a programming library that doesn't come with any editor, but the files it loads are made with standard open-source tools. Samples come bundled with several ready-to-use assets, but these are the tools you'll need to edit or create new ones:
-* Source code: [VSCode](), [Notepad++]()...
-* Graphics: [GIMP](http://www.gimp.org), [Grafx2](http://pulkomandy.tk/projects/GrafX2), [Paint.NET](https://www.getpaint.net/), or any graphic editor with 8-bit (256 colors) png support
-* Backgrounds: [Tiled Map Editor](https://www.mapeditor.org/) is the official editor
-* Sprites: Online tool [Lesy SpriteSheet](https://www.leshylabs.com/blog/posts/2013-12-03-Leshy_SpriteSheet_Tool.html)
-* Sequences: Any standard XML editor
+* Source code: [VSCode](https://code.visualstudio.com/), [Notepad++](https://notepad-plus-plus.org/downloads/)...
+* Graphics, tiles & sprites: [Aseprite](https://www.aseprite.org/), [Piskel](https://www.piskelapp.com/), [Grafx2](http://grafx2.chez.com/)...
+* Maps: [Tiled Map Editor](https://www.mapeditor.org/)
 
 # Creating packages
-To create a package with all the assets, the open-source tool [ResourcePacker](https://github.com/megamarc/ResourcePacker) must be used. It's a corss-platform, easy to use command line tool that creates packages with files keeping the same directory structure. Tilengine has built-in support for loading assets from these packages just as if they still were stand-alone files.
+To create a package with all the assets, the open-source tool [ResourcePacker](https://github.com/megamarc/ResourcePacker) must be used. It's a cross-platform, easy to use command line tool that creates packages with files keeping the same directory structure. Tilengine has built-in support for loading assets from these packages just as if they still were stand-alone files.
 
 # Bindings
 There are bindings to use Tilengine from several programming languages:
@@ -193,7 +175,7 @@ Python    | [PyTilengine](https://github.com/megamarc/PyTilengine)
 C#        | [CsTilengine](https://github.com/megamarc/CsTilengine)
 Pascal    | [PascalTileEngine](https://github.com/turric4n/PascalTileEngine)
 FreeBasic | [FBTilengine](https://github.com/megamarc/FBTilengine)
-Java	  | [JTilengine](https://github.com/megamarc/JTilengine)
+Java	    | [JTilengine](https://github.com/megamarc/JTilengine)
 
 # Contributors
 These people contributed to tilengine:

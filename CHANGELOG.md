@@ -1,5 +1,26 @@
 # Tilengine changelog
 
+## [2.8.0] - 3/5/2020
+- Revamped animation engine. Slotted animations used only by palette (color cycle)
+- Tileset sequences: a frame and the target tile can be the same
+- Enhanced .tmx loader: more layers and shared tileset (.tsx) on several layers
+- Updated ResourcePacker loader to collision-free hashes (get packer get at https://megamarc.itch.io/resourcepacker)
+- Forest sample adds optional parameter to specify resource pack file and encryption password
+- Window: fullscreen windows are desktop borderless instead of exclusive
+
+## [2.7.0] - 26/4/2020
+- Adds sprite linked list order: TLN_SetFirstSprite() and TLN_SetNextSprite()
+- Adds sprite masking: TLN_EnableSpriteMasking() and TLN_SetSpritesMaskRegion()
+- Removes parameter "count" in TLN_CreateSpriteSequence(), now gets detected from sprite names
+- CRT effect: when disabled always uses nearest-neighbor interpolation
+- Fixes compiler-induced optimization bugs in built-in window
+- Samples: removes usage of old sqx files for sprite animation and replaces with TLN_CreateSpriteAnimation() (shooter, supermarioclone, forest)
+- Fixes broken loading of txt-based spritesheets in 2.6.0
+
+## [2.6.0] - 22/4/2020
+- Supports .json array for spritesheet loader, compatible with Aseprite, Texturepacker, Piskel...
+- Supports loading of 24/32 bpp pixel data on the fly. Note that bitmaps must have less than 255 unique colors
+
 ## [2.5.0] - 15/4/2020
 - Adds support for Tiled editor image-based tilesets and objet layers
 - ObjectList: Removes old TLN_AddSpriteToList(), TLN_GetObjectsInReigion() and TLN_Object struct
@@ -11,7 +32,7 @@
 - Updates sample "Forest" to showcase new image-based tileset and object list features
 
 ## [2.4.2] - 22/12/2019
-- Fixes broken crt effect in x64, due to mismatched bool for uint8_t causing missalignment of indexed data. Updates windows binaries
+- Fixes broken crt effect in x64, due to mismatched bool for uint8_t causing misalignment of indexed data. Updates windows binaries
 
 ## [2.4.1] - 19/11/2019
 - Uses explicit casts on all functions returning generic void*, allows for more strict C++ compile-time checks but it's still full pure C compliant
@@ -30,11 +51,11 @@
 
 ## [2.3.0] - ]19/3/2019
 - Supports resource packager with AES-128 encryption
-- Adds TLN_OpenResourcePack() and TLN_CloseResourcePack() to bind a resource pack created with the open-source `respack` tool: https://github.com/megamarc/ResourcePacker
+- Adds TLN_OpenResourcePack() and TLN_CloseResourcePack() to bind a resource pack created with the `respack` tool: https://megamarc.itch.io/resourcepacker
 
 ## [2.2.1] - 17/3/2019
 - Windowing: adds TLN_GetWindowWidth() and TLN_GetWindowHeight() to get actual size of created window, to properly scaling mouse coordinates when using SDL_callback.
-- Sprite: adds TLN_GetSpriteState() function and TLN_SpriteState structure to query detailed runtime info about a given sprite (position, actual size, etc)
+- Sprite: adds TLN_GetSpriteState() function and TLN_SpriteState structure to query detailed runtime info about a given sprite (position, actual size, etc.)
 
 ## [2.2.0 MPL] - 18/2/2019
 - Changes license to MPL 2.0. Allows linking as static library, compatible with licensing requirements of console devkits

@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
 	TLN_Tilemap foreground;
 	TLN_Bitmap middleground, background;
 	TLN_ObjectList props_list;
-	TLN_Spriteset player;
+	TLN_Spriteset atlas;
 	TLN_Sequence idle, skip;
 	int xworld = 0;
 	int xplayer, yplayer;
@@ -45,16 +45,37 @@ int main(int argc, char* argv[])
 	int width, height;
 	TLN_ObjectInfo info = {0};
 	bool ok;
+	char* respack = NULL;
+	char* passkey = NULL;
+	
+	/* get arguments */
+	if (argc > 1)
+		respack = argv[1];
+	if (argc > 2)
+		passkey = argv[2];
 
-	TLN_Init(HRES, VRES, NUM_LAYERS, 8, 8);
+	TLN_Init(HRES, VRES, NUM_LAYERS, 8, 0);
 
 	/* load assets */
 	TLN_SetLogLevel(TLN_LOG_ERRORS);
-	TLN_SetLoadPath("assets/forest");
+	if (respack != NULL)
+	{
+		ok = TLN_OpenResourcePack(respack, passkey);
+		if (!ok)
+		{
+			printf("Cannot open resource pack!\n");
+			TLN_Deinit();
+			return 0;
+		}
+		TLN_SetLoadPath("forest");
+	}
+	else
+		TLN_SetLoadPath("assets/forest");
+	
 	foreground = TLN_LoadTilemap("map.tmx", "Main Layer");
 	middleground = TLN_LoadBitmap("middleground.png");
 	background = TLN_LoadBitmap("background.png");
-	player = TLN_LoadSpriteset("player");
+	atlas = TLN_LoadSpriteset("atlas.png");
 	props_list = TLN_LoadObjectList("map.tmx", NULL);
 
 	/* setup layers */
@@ -81,14 +102,14 @@ int main(int argc, char* argv[])
 	TLN_SetLayerParent(LAYER_PROPS, LAYER_FOREGROUND);
 
 	/* create sprite sequences */
-	idle = TLN_CreateSpriteSequence(NULL, player, "player-idle-", 9, 6);
-	skip = TLN_CreateSpriteSequence(NULL, player, "player-skip-", 8, 6);
+	idle = TLN_CreateSpriteSequence(NULL, atlas, "player-idle/player-idle-", 6);
+	skip = TLN_CreateSpriteSequence(NULL, atlas, "player-skip/player-skip-", 6);
 	
 	/* setup main player sprite */
 	xplayer = 48;
 	yplayer = 144;
-	TLN_ConfigSprite(0, player, 0);
-	TLN_SetSpriteAnimation(0, 0, idle, 0);
+	TLN_ConfigSprite(0, atlas, 0);
+	TLN_SetSpriteAnimation(0, idle, 0);
 
 	/* create window & main loop */
 	TLN_CreateWindow(NULL, 0);
@@ -114,6 +135,7 @@ int main(int argc, char* argv[])
 		}
 	}
 	TLN_DeleteWindow();
+	TLN_CloseResourcePack();
 	TLN_Deinit();
 	return 0;
 }

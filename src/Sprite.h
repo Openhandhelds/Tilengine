@@ -15,6 +15,8 @@
 #include "Draw.h"
 #include "Blitters.h"
 #include "Spriteset.h"
+#include "List.h"
+#include "Animation.h"
 
 /* rectangulo */
 typedef struct
@@ -48,7 +50,10 @@ typedef struct Sprite
 	bool			ok;
 	bool			do_collision;
 	bool			collision;
+	bool			masking;
 	TLN_Bitmap		rotation_bitmap;
+	ListNode		list_node;
+	Animation		animation;
 }
 Sprite;
 

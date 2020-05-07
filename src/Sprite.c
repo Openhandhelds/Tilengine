@@ -17,7 +17,7 @@
 #include "Palette.h"
 #include "Spriteset.h"
 #include "Tables.h"
-#include "Hash.h"
+#include "Debug.h"
 
 #ifdef _MSC_VER
 #define inline __inline
@@ -28,7 +28,7 @@ static void UpdateSprite (Sprite* sprite);
 
 /*!
  * \brief
- * Configures a sprite, setting setting spriteset and flags at once
+ * Configures a sprite, setting spriteset and flags at once
  * 
  * \param nsprite
  * Id of the sprite [0, num_sprites - 1]
@@ -70,6 +70,7 @@ bool TLN_ConfigSprite (int nsprite, TLN_Spriteset spriteset, TLN_TileFlags flags
 bool TLN_SetSpriteSet (int nsprite, TLN_Spriteset spriteset)
 {
 	Sprite *sprite;
+	bool enabled;
 	if (nsprite >= engine->numsprites)
 	{
 		TLN_SetLastError (TLN_ERR_IDX_SPRITE);
@@ -81,12 +82,21 @@ bool TLN_SetSpriteSet (int nsprite, TLN_Spriteset spriteset)
 	sprite = &engine->sprites[nsprite];
 	sprite->spriteset = spriteset;
 	sprite->pitch = sprite->spriteset->bitmap->pitch;
+	enabled = sprite->ok;
 	if (spriteset->palette)
 		sprite->palette = spriteset->palette;
 	sprite->ok = sprite->spriteset && sprite->palette;
-	sprite->num = nsprite;
+	if (sprite->ok)
+	{
+		sprite->num = nsprite;
+		sprite->ok = TLN_SetSpritePicture(nsprite, 0);
+	}
+
+	/* sprite enabled: add to the end */
+	if (enabled == false && sprite->ok == true)
+		ListAppendNode(&engine->list_sprites, nsprite);
 	
-	return TLN_SetSpritePicture (nsprite, 0);
+	return sprite->ok;
 }
 
 /*!
@@ -186,6 +196,7 @@ bool TLN_SetSpritePicture (int nsprite, int entry)
 	sprite->info = &sprite->spriteset->data[entry];
 	sprite->pixels = sprite->spriteset->bitmap->data + sprite->info->offset;
 	UpdateSprite (sprite);
+	debugmsg("SetSpritePicture %d -> %d\n", nsprite, entry);
 
 	TLN_SetLastError (TLN_ERR_OK);
 	return true;
@@ -434,7 +445,7 @@ bool TLN_SetSpriteRotation(int nsprite, float angle)
 		corners[c].y = (math2d_t)roundf(corners[c].y);
 	}
 
-	/* obtiene rectángulo contenedor en pantalla */
+	/* obtiene rectÃ¡ngulo contenedor en pantalla */
 	rect = &sprite->dstrect;
 	rect->x1 = rect->x2 = (int)corners[0].x;
 	rect->y1 = rect->y2 = (int)corners[0].y;
@@ -447,7 +458,7 @@ bool TLN_SetSpriteRotation(int nsprite, float angle)
 		if (rect->y2 < point->y) rect->y2 = (int)point->y;
 	}
 
-	/* ajusta array de puntos a origen (0,0) para obtener tamaño */
+	/* ajusta array de puntos a origen (0,0) para obtener tamaÃ±o */
 	for (c = 0; c < 4; c++)
 	{
 		corners[c].x -= rect->x1;
@@ -486,7 +497,7 @@ bool TLN_SetSpriteRotation(int nsprite, float angle)
 	for (y = 0; y < rotated->height; y++)
 	{
 		for (x = 0; x < rotated->width; x++)
-			printf("%2d ", *get_bitmap_ptr(rotated, x, y));
+			debugmsg("%2d ", *get_bitmap_ptr(rotated, x, y));
 	}
 	*/
 	return true;
@@ -625,13 +636,25 @@ bool TLN_GetSpriteCollision(int nsprite)
  */
 bool TLN_DisableSprite(int nsprite)
 {
+	Sprite* sprite;
+	bool enabled;
 	if (nsprite >= engine->numsprites)
 	{
 		TLN_SetLastError(TLN_ERR_IDX_SPRITE);
 		return false;
 	}
 
-	engine->sprites[nsprite].ok = false;
+	sprite = &engine->sprites[nsprite];
+	enabled = sprite->ok;
+	sprite->ok = false;
+
+	/* disabled: remove from linked list */
+	if (enabled == true)
+	{
+		debugmsg("%s(%d)\t", __FUNCTION__, nsprite);
+		ListUnlinkNode(&engine->list_sprites, nsprite);
+	}
+
 	TLN_SetLastError(TLN_ERR_OK);
 	return true;
 }
@@ -686,6 +709,111 @@ TLNAPI bool TLN_GetSpriteState(int nsprite, TLN_SpriteState* state)
 	
 	TLN_SetLastError(TLN_ERR_OK);
 	return true;
+}
+
+/*!
+ * \brief Sets the first sprite drawn (beginning of list)
+ * \param nsprite Id of the sprite [0, num_sprites - 1]. Must be enabled (visible)
+ */
+bool TLN_SetFirstSprite(int nsprite)
+{
+	Sprite* sprite;
+	List* list;
+	ListNode* node;
+	int cut1, cut2;
+	if (nsprite >= engine->numsprites || !engine->sprites[nsprite].ok || nsprite == engine->list_sprites.first)
+	{
+		TLN_SetLastError(TLN_ERR_IDX_SPRITE);
+		return false;
+	}
+	list = &engine->list_sprites;
+	sprite = &engine->sprites[nsprite];
+	node = &sprite->list_node;
+
+	/* cut points inside the list to rejoin */
+	cut1 = node->prev;
+	cut2 = node->next;
+
+	/* rejoin segments */
+	node->prev = -1;
+	node->next = -1;
+	ListLinkNodes(list, nsprite, list->first);
+	ListLinkNodes(list, cut1, cut2);
+	list->first = nsprite;
+
+	debugmsg("%s(%d)\t", __FUNCTION__, nsprite);
+	ListPrint(list);
+	TLN_SetLastError(TLN_ERR_OK);
+	return true;
+}
+
+/*!
+ * \brief Sets the next sprite to draw for a given sprite, builds list
+ * \param nsprite Id of the sprite [0, num_sprites - 1]. Must be enabled (visible)
+ * \param next Id of the sprite to draw after Id [0, num_sprites - 1]. Must be enabled (visible)
+ */
+bool TLN_SetNextSprite(int nsprite, int next)
+{
+	List* list;
+	int cut1, cut2, cut3;
+	if (nsprite >= engine->numsprites || !engine->sprites[nsprite].ok || nsprite == next)
+	{
+		TLN_SetLastError(TLN_ERR_IDX_SPRITE);
+		return false;
+	}
+
+	if (next >= engine->numsprites || !engine->sprites[next].ok)
+	{
+		TLN_SetLastError(TLN_ERR_IDX_SPRITE);
+		return false;
+	}
+	list = &engine->list_sprites;
+
+	/* cut points inside the list te rejoin */
+	cut1 = ListGetNext(list, nsprite);
+	cut2 = ListGetPrev(list, next);
+	cut3 = ListGetNext(list, next);
+
+	/* rejoin segments */
+	ListLinkNodes(list, nsprite, next);
+	ListLinkNodes(list, next, cut1);
+	ListLinkNodes(list, cut2, cut3);
+	if (list->first == next)
+		list->first = cut3;
+
+	debugmsg("%s(%d,%d)\t", __FUNCTION__, nsprite, next);
+	ListPrint(list);
+	TLN_SetLastError(TLN_ERR_OK);
+	return true;
+}
+
+/*!
+ * \brief Enables or disables masking for this sprite, if enabled it won't be drawn inside the region set up with TLN_SetSpritesMaskRegion()
+ * \param nsprite Id of the sprite to mask [0, num_sprites - 1].
+ * \param enable Enables (true) or disables (false) masking
+ */
+bool TLN_EnableSpriteMasking(int nsprite, bool enable)
+{
+	if (nsprite >= engine->numsprites)
+	{
+		TLN_SetLastError(TLN_ERR_IDX_SPRITE);
+		return false;
+	}
+
+	engine->sprites[nsprite].masking = true;
+	TLN_SetLastError(TLN_ERR_OK);
+	return true;
+}
+
+/*!
+ * \brief Defines a sprite masking region between the two scanlines. Sprites masked with TLN_EnableSpriteMasking() won't be drawn inside this region.
+ * \param top_line Top scaline where masking starts
+ * \param bottom_line Bottom scaline where masking ends
+ */
+void TLN_SetSpritesMaskRegion(int top_line, int bottom_line)
+{
+	engine->sprite_mask_top = top_line;
+	engine->sprite_mask_bottom = bottom_line;
 }
 
 /* actualiza datos internos */
@@ -792,7 +920,7 @@ static void UpdateSprite (Sprite* sprite)
 	}
 
 	/*
-	printf ("Sprite %02d scale=%.02f,%.02f src=[%d,%d,%d,%d] dst=[%d,%d,%d,%d]\n",
+	debugmsg ("Sprite %02d scale=%.02f,%.02f src=[%d,%d,%d,%d] dst=[%d,%d,%d,%d]\n",
 		sprite->num, sprite->sx, sprite->sy,
 		fix2int(sprite->srcrect.x1), fix2int(sprite->srcrect.y1), fix2int(sprite->srcrect.x2), fix2int(sprite->srcrect.y2), 
 		sprite->dstrect.x1, sprite->dstrect.y1, sprite->dstrect.x2, sprite->dstrect.y2);

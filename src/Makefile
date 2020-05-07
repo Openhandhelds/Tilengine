@@ -16,13 +16,13 @@ else
 		LIBS = -lSDL2 -lc -lz -lpng
 		BIN  = libTilengine.so
 		LDFLAGS = -shared -s
+		LIBPATH = ../lib/linux_$(arch)
 		ifeq ($(arch),i686)
 			CFLAGS = -m32 -msse2
 		endif
 		ifeq ($(arch),x86_64)
 			CFLAGS = -m64 -msse2
 		endif
-		LIBPATH = ../lib/linux_$(arch)
 	endif
 	
 	# OSX specific flags

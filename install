@@ -8,12 +8,12 @@ tgtpath="/usr"
 
 echo "Installing $name $arch"
 include="Tilengine.h"
-if [ $name == "Linux" ]; then
+if [ "$name" == "Linux" ]; then
 	library="libTilengine.so"
 	incpath="$tgtpath/include"
 	libpath="$tgtpath/lib"
 	srcpath="linux_$arch"
-elif [ $name == "Darwin" ]; then
+elif [ "$name" == "Darwin" ]; then
 	library="Tilengine.dylib"
 	incpath="/usr/local/include"
 	srcpath="darwin_x86_64"

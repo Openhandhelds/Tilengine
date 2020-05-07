@@ -12,4 +12,3 @@ script:
 - make
 - make Test
 - ./Test
-- cd ..

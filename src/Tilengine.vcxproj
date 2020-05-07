@@ -169,8 +169,7 @@ copy $(TargetDir)$(TargetName).lib $(SolutionDir)lib\$(Platform)
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>upx -9 $(TargetPath)
-
+      <Command>
 if not exist $(SolutionDir)lib\$(Platform) (
   mkdir $(SolutionDir)lib
   mkdir $(SolutionDir)lib\$(Platform)
@@ -206,8 +205,7 @@ copy $(TargetDir)$(TargetName).lib $(SolutionDir)lib\$(Platform)
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>upx -9 $(TargetPath)
-
+      <Command>
 if not exist $(SolutionDir)lib\$(Platform) (
   mkdir $(SolutionDir)lib
   mkdir $(SolutionDir)lib\$(Platform)
@@ -224,10 +222,12 @@ copy $(TargetDir)$(TargetName).lib $(SolutionDir)lib\$(Platform)
     <ClCompile Include="Base64.c" />
     <ClCompile Include="Bitmap.c" />
     <ClCompile Include="Blitters.c" />
+    <ClCompile Include="cJSON.c" />
     <ClCompile Include="Draw.c" />
     <ClCompile Include="GaussianBlur.c" />
     <ClCompile Include="Hash.c" />
     <ClCompile Include="Layer.c" />
+    <ClCompile Include="List.c" />
     <ClCompile Include="LoadBitmap.c" />
     <ClCompile Include="LoadFile.c" />
     <ClCompile Include="LoadPalette.c" />
@@ -259,11 +259,14 @@ copy $(TargetDir)$(TargetName).lib $(SolutionDir)lib\$(Platform)
     <ClInclude Include="Base64.h" />
     <ClInclude Include="Bitmap.h" />
     <ClInclude Include="Blitters.h" />
+    <ClInclude Include="cJSON.h" />
+    <ClInclude Include="Debug.h" />
     <ClInclude Include="DIB.h" />
     <ClInclude Include="Draw.h" />
     <ClInclude Include="Engine.h" />
     <ClInclude Include="Hash.h" />
     <ClInclude Include="Layer.h" />
+    <ClInclude Include="List.h" />
     <ClInclude Include="LoadFile.h" />
     <ClInclude Include="LoadTMX.h" />
     <ClInclude Include="Math2D.h" />

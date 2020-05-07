@@ -138,7 +138,7 @@ static bool intersetcs(rect_t* rect1, rect_t* rect2)
 
 /*!
  * \brief Creates a TLN_ObjectList
- * The list is created empty, it must be populated with TLN_AddTileObjectToList()
+ * The list is created empty, it must be populated with TLN_AddSpriteToList()
  * and assigned to a layer with TLN_SetLayerObjects()
  * \return Reference to new object or NULL if error
  */
