@@ -10,6 +10,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include "Debug.h"
 #include "Object.h"
 #include "Engine.h"
 
@@ -53,7 +54,11 @@ void* CreateBaseObject (ObjectType type, int size)
 		object->guid = numobjects;
 		object->size = size;
 		object->owner = true;
+#ifdef _DEBUG
+		debugmsg("DBG - %s, %s - %d: %s created at %p, %d size\n", __FILE__, __FUNCTION__, __LINE__, object_types[type], object, size);
+#else
 		tln_trace(TLN_LOG_VERBOSE, "%s created at %p, %d size", object_types[type], object, size);
+#endif
 	}
 	else
 	{
@@ -83,7 +88,11 @@ void DeleteBaseObject (void* object)
 	{
 		numobjects--;
 		numbytes -= ObjectSize(object);
+#ifdef _DEBUG
+		debugmsg("DBG - %s, %s - %d: %s %p deleted\n", __FILE__, __FUNCTION__, __LINE__, object_types[ObjectType(object)], object);
+#else
 		tln_trace(TLN_LOG_VERBOSE, "%s %p deleted", object_types[ObjectType(object)], object);
+#endif
 		free (object);
 	}
 }
@@ -95,7 +104,11 @@ bool CheckBaseObject (void* object, ObjectType type)
 		return true;
 
 	TLN_SetLastError(object_errors[type]);
+#ifdef _DEBUG
+	debugmsg("DBG - %s, %s - %d: invalid object address is %p\n", __FILE__, __FUNCTION__, __LINE__, object);
+#else
 	tln_trace(TLN_LOG_ERRORS, "Invalid object address is %p", object);
+#endif
 	return false;
 }
 
