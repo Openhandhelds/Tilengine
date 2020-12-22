@@ -21,6 +21,7 @@
 static void SelectBlitter (Layer* layer);
 
 /*!
+ * \deprecated Use \ref TLN_SetLayerTilemap instead
  * \brief
  * Configures a background layer with the specified tileset and tilemap
  * 
@@ -54,7 +55,7 @@ bool TLN_SetLayer(int nlayer, TLN_Tileset tileset, TLN_Tilemap tilemap)
 	if (!CheckBaseObject(tilemap, OT_TILEMAP))
 		return false;
 
-	/* seleccionar tileset del tilemap */
+	/* select tilemsp's own tileset */
 	if (tileset == NULL)
 		tileset = tilemap->tileset;
 
@@ -72,10 +73,8 @@ bool TLN_SetLayer(int nlayer, TLN_Tileset tileset, TLN_Tilemap tilemap)
 	}
 	layer->bitmap = NULL;
 	layer->objects = NULL;
-	layer->ok = true;
-	layer->draw = GetLayerDraw(layer);
 
-	/* aplica atributo de prioridad del tileset al tilemap */
+	/* apply priority attribute */
 	if (tileset->attributes != NULL)
 	{
 		const int num_tiles = tilemap->rows * tilemap->cols;
@@ -93,7 +92,7 @@ bool TLN_SetLayer(int nlayer, TLN_Tileset tileset, TLN_Tilemap tilemap)
 		}
 	}
 
-	/* inicia animaciones */
+	/* start animations */
 	if (tileset->sp != NULL)
 	{
 		int c;
@@ -109,9 +108,27 @@ bool TLN_SetLayer(int nlayer, TLN_Tileset tileset, TLN_Tilemap tilemap)
 		}
 	}
 
-	SelectBlitter (layer);
+	if (tilemap->visible)
+	{
+		layer->ok = true;
+		layer->draw = GetLayerDraw(layer);
+		SelectBlitter(layer);
+	}
+
 	TLN_SetLastError (TLN_ERR_OK);
 	return true;
+}
+
+/*!
+ * \brief Configures a tiled background layer with the specified tilemap
+ * \param nlayer Layer index [0, num_layers - 1]
+ * \param tilemap Reference to the tilemap to assign
+ * \returns true if success or false if error
+ * \see TLN_LoadTilemap()
+ */
+bool TLN_SetLayerTilemap(int nlayer, TLN_Tilemap tilemap)
+{
+	return TLN_SetLayer(nlayer, NULL, tilemap);
 }
 
 /*!
@@ -129,7 +146,7 @@ bool TLN_SetLayer(int nlayer, TLN_Tileset tileset, TLN_Tilemap tilemap)
 * but assigns the palette of the specified bitmap
 *
 * \see
-* TLN_DisableLayer()
+* TLN_LoadBitmap() TLN_DisableLayer()
 */
 bool TLN_SetLayerBitmap(int nlayer, TLN_Bitmap bitmap)
 {
@@ -177,6 +194,7 @@ bool TLN_SetLayerBitmap(int nlayer, TLN_Bitmap bitmap)
  * \param nlayer Layer index [0, num_layers - 1]
  * \param objects Reference to the TLN_ObjectList to attach
  * \param tileset optional reference to the image-based tileset object. If NULL, object list must have an attached tileset
+ * \see TLN_LoadObjectList()
  */
 bool TLN_SetLayerObjects(int nlayer, TLN_ObjectList objects, TLN_Tileset tileset)
 {
@@ -188,6 +206,8 @@ bool TLN_SetLayerObjects(int nlayer, TLN_ObjectList objects, TLN_Tileset tileset
 		TLN_SetLastError(TLN_ERR_IDX_LAYER);
 		return false;
 	}
+	layer = &engine->layers[nlayer];
+	layer->ok = false;
 
 	if (!CheckBaseObject(objects, OT_OBJECTLIST))
 	{
@@ -203,26 +223,35 @@ bool TLN_SetLayerObjects(int nlayer, TLN_ObjectList objects, TLN_Tileset tileset
 		return false;
 	}
 
-	layer = &engine->layers[nlayer];
-	layer->ok = false;
 	layer->tileset = tileset;
 	layer->tilemap = NULL;
 	layer->bitmap = NULL;
 	layer->objects = objects;
 	layer->width = objects->width;
 	layer->height = objects->height;
-
+	
 	/* link objects to actual bitmaps */
 	item = objects->list;
 	while (item)
 	{
-		item->bitmap = GetTilesetBitmap(tileset, item->gid);
-		item = item->next;		
+		if (item->visible && item->has_gid)
+		{
+			item->bitmap = GetTilesetBitmap(tileset, item->gid);
+			if (item->bitmap)
+			{
+				item->width = item->bitmap->width;
+				item->height = item->bitmap->height;
+			}
+		}
+		item = item->next;
 	}
 
-	layer->ok = true;
-	layer->draw = GetLayerDraw(layer);
-	SelectBlitter(layer);
+	if (objects->visible)
+	{
+		layer->ok = true;
+		layer->draw = GetLayerDraw(layer);
+		SelectBlitter(layer);
+	}
 	TLN_SetLastError(TLN_ERR_OK);
 	return true;
 }
@@ -482,7 +511,8 @@ bool TLN_SetLayerPosition (int nlayer, int hstart, int vstart)
 		layer->vstart += layer->height;
 
 	TLN_SetLastError (TLN_ERR_OK);
-	layer->ok = true;
+	if ((layer->tilemap && layer->tilemap->visible) || (layer->objects && layer->objects->visible))
+		layer->ok = true;
 	return true;
 }
 

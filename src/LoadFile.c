@@ -216,10 +216,10 @@ bool CheckFile (const char* filename)
 void SplitFilename(const char* filename, FileInfo* fileinfo)
 {
 	int len = 0;
-	char* block1 = strrchr(filename, SLASH);
-	char* block2 = strrchr(filename, '.');
+	char* block1 = (char*)strrchr(filename, SLASH);
+	char* block2 = (char*)strrchr(filename, '.');
 	if (block1 == NULL)
-		block1 = strrchr(filename, BACKSLASH);
+		block1 = (char*)strrchr(filename, BACKSLASH);
 	
 	memset(fileinfo, 0, sizeof(FileInfo));
 
@@ -232,7 +232,7 @@ void SplitFilename(const char* filename, FileInfo* fileinfo)
 		fileinfo->path[len] = 0;
 	}
 	else
-		block1 = filename;
+		block1 = (char*)filename;
 
 	/* name + ext */
 	if (block2 && block2 > block1)
@@ -240,7 +240,7 @@ void SplitFilename(const char* filename, FileInfo* fileinfo)
 		/* name */
 		len = (int)(block2 - block1);
 		if (block1 == NULL)
-			block1 = filename;
+			block1 = (char*)filename;
 		memcpy(fileinfo->name, block1, len);
 		fileinfo->name[len] = 0;
 

@@ -208,7 +208,7 @@ static void* handler (SimpleXmlParser parser, SimpleXmlEvent evt,
 
 /* cache section: keeps already loaded tilesets so it doesnt spawn multiple instances of the same */
 #define CACHE_SIZE	16
-static cache_entries = 0;
+static int cache_entries = 0;
 struct
 {
 	char name[200];
@@ -302,8 +302,17 @@ TLN_Tileset TLN_LoadTileset (const char* filename)
 		int x, y, dx, dy;
 		int id;
 		int pitch;
+		FileInfo fi = { 0 };
+		char imagepath[200];
 
-		bitmap = TLN_LoadBitmap(loader.source);
+		/* composite bitmap filename with relative path of parent tsx */
+		SplitFilename(filename, &fi);
+		if (fi.path[0] != 0)
+			snprintf(imagepath, sizeof(imagepath), "%s/%s", fi.path, loader.source);
+		else
+			strncpy(imagepath, loader.source, sizeof(imagepath));
+
+		bitmap = TLN_LoadBitmap(imagepath);
 		if (!bitmap)
 		{
 			TLN_SetLastError(TLN_ERR_FILE_NOT_FOUND);

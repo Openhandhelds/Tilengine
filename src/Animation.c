@@ -39,19 +39,6 @@ static void SetAnimation (Animation* animation, TLN_Sequence sequence, animation
 static void ColorCycle (TLN_Palette srcpalette, TLN_Palette dstpalette, struct Strip* strip);
 static void ColorCycleBlend (TLN_Palette srcpalette, TLN_Palette dstpalette, struct Strip* strip, int t);
 
-static void tileset_animation(Animation* animation, int srctile, int dsttile)
-{
-	TLN_Tileset tileset = engine->layers[animation->idx].tileset;
-	debugmsg("TileAnim: %d -> %d\n", srctile, dsttile);
-	if (srctile != dsttile)
-		TLN_CopyTile(tileset, srctile, dsttile);
-	else
-	{
-		TLN_Bitmap bitmap = animation->backup;
-		TLN_SetTilesetPixels(tileset, srctile, bitmap->data, bitmap->pitch);
-	}
-}
-
 /* updates animation state */
 void UpdateAnimation(Animation* animation, int time)
 {
@@ -90,11 +77,11 @@ void UpdateAnimation(Animation* animation, int time)
 	switch (animation->type)
 	{
 	case TYPE_SPRITE:
-		TLN_SetSpritePicture(animation->idx, frames[animation->pos].index);
+		TLN_SetSpritePicture(animation->nsprite, frames[animation->pos].index);
 		break;
 
 	case TYPE_TILESET:
-		tileset_animation(animation, frames[animation->pos].index, sequence->target);
+		animation->tileset->tiles[sequence->target] = frames[animation->pos].index;
 		break;
 
 		/* Fall through */
@@ -240,7 +227,6 @@ bool TLN_SetPaletteAnimationSource (int index, TLN_Palette palette)
 bool SetTilesetAnimation(TLN_Tileset tileset, int index, TLN_Sequence sequence)
 {
 	Animation* animation = NULL;
-	int c;
 	
 	if (index >= tileset->sp->num_sequences)
 	{
@@ -254,17 +240,7 @@ bool SetTilesetAnimation(TLN_Tileset tileset, int index, TLN_Sequence sequence)
 	
 	animation = &tileset->animations[index];
 	SetAnimation(animation, sequence, TYPE_TILESET);
-	if (animation->backup != NULL)
-		TLN_DeleteBitmap(animation->backup);
-	
-	/* backup tile 0 on separate bitmap */
-	animation->backup = TLN_CreateBitmap(tileset->width, tileset->height, 8);
-	for (c = 0; c < tileset->height; c += 1)
-	{
-		uint8_t* srcdata = &GetTilesetPixel(tileset, sequence->target, 0, c);
-		uint8_t* dstdata = get_bitmap_ptr(animation->backup, 0, c);
-		memcpy(dstdata, srcdata, tileset->width);
-	}	
+	animation->tileset = tileset;
 
 	TLN_SetLastError (TLN_ERR_OK);
 	return true;
@@ -304,7 +280,7 @@ bool TLN_SetSpriteAnimation (int nsprite, TLN_Sequence sequence, int loop)
 	sprite = &engine->sprites[nsprite];
 	animation = &sprite->animation;
 	SetAnimation (animation, sequence, TYPE_SPRITE);
-	animation->idx = nsprite;
+	animation->nsprite = nsprite;
 	animation->loop = loop;
 
 	TLN_SetLastError (TLN_ERR_OK);
@@ -313,10 +289,44 @@ bool TLN_SetSpriteAnimation (int nsprite, TLN_Sequence sequence, int loop)
 
 /*!
  * \brief
- * Deprecated, each frame has its own delay
+ * Sets animation delay for single frame of given sprite animation
+ *
+ * \param index
+ * Id of the sprite with animation (0 <= id < num_sprites)
+ *
+ * \param frame
+ * Id of animation frame to change delay in (0 <= id < sequence->count)
+ *
+ * \param delay
+ * New animation frame delay to set
+ *
+ * \see
+ * Animations
+ *
  */
-bool TLN_SetAnimationDelay (int index, int delay)
+bool TLN_SetAnimationDelay(int index, int frame, int delay)
 {
+	Animation* animation;
+	TLN_SequenceFrame* frames = NULL;
+
+	if (index >= engine->numanimations || index < 0)
+	{
+		TLN_SetLastError(TLN_ERR_IDX_SPRITE);
+		return false;
+	}
+
+	animation = &engine->sprites[index].animation;
+	frames = (TLN_SequenceFrame*)animation->sequence->data;
+
+	if (frame >= animation->sequence->count || frame < 0)
+	{
+		TLN_SetLastError(TLN_ERR_IDX_ANIMATION);
+		return false;
+	}
+
+	frames[frame].delay = delay;
+
+	TLN_SetLastError(TLN_ERR_OK);
 	return true;
 }
 

@@ -345,7 +345,6 @@ void TLN_SetWindowTitle (const char* title)
 
 static int WindowThread (void* data)
 {
-	int time = 0;
 	bool ok;
 
 	ok = CreateWindow ();
@@ -361,7 +360,7 @@ static int WindowThread (void* data)
 	while (TLN_IsWindowActive())
 	{
 		SDL_LockMutex (lock);
-		TLN_DrawFrame (time++);
+		TLN_DrawFrame (0);
 		SDL_CondSignal (cond);
 		SDL_UnlockMutex (lock);
 		TLN_ProcessWindow ();
@@ -638,7 +637,7 @@ bool TLN_ProcessWindow (void)
 
 		case SDL_KEYDOWN:
 			keybevt = (SDL_KeyboardEvent*)&evt;
-			if (keybevt->repeat == true)
+			if (keybevt->repeat != 0)
 				break;
 
 			/* special inputs */
@@ -997,24 +996,13 @@ int TLN_GetLastInput (void)
 	return retval;
 }
 
-/*!
- * \brief Begins active rendering frame in built-in window
- * \param time Timestamp (same value as in TLN_UpdateFrame())
- * \remarks Use this function instead of TLN_BeginFrame() when using the built-in window
- * \see TLN_CreateWindow(), TLN_EndWindowFrame(), TLN_DrawNextScanline()
- */
-void TLN_BeginWindowFrame (int time)
+static void BeginWindowFrame (void)
 {
 	SDL_LockTexture (backbuffer, NULL, (void**)&rt_pixels, &rt_pitch);
 	TLN_SetRenderTarget (rt_pixels, rt_pitch);
-	TLN_BeginFrame (time);
 }
 
-/*!
- * \brief Finishes rendering the current frame and updates the built-in window
- * \see TLN_CreateWindow(), TLN_BeginWindowFrame(), TLN_DrawNextScanline()
- */
-void TLN_EndWindowFrame (void)
+static void EndWindowFrame (void)
 {
 	/* pixeles con threshold */
 	if (crt_enable && crt.glow_factor != 0)
@@ -1059,8 +1047,7 @@ void TLN_EndWindowFrame (void)
  * \brief
  * Draws a frame to the window
  * 
- * \param time
- * Timestamp (same value as in TLN_UpdateFrame())
+ * \param frame Optional frame number. Set to 0 to autoincrement from previous value
  * 
  * Draws a frame to the window
  * 
@@ -1072,11 +1059,11 @@ void TLN_EndWindowFrame (void)
  * \see
  * TLN_CreateWindow(), TLN_UpdateFrame()
  */
-void TLN_DrawFrame (int time)
+void TLN_DrawFrame (int frame)
 {
-	TLN_BeginWindowFrame (time);
-	while (TLN_DrawNextScanline ()){}
-	TLN_EndWindowFrame ();
+	BeginWindowFrame ();
+	TLN_UpdateFrame(frame);
+	EndWindowFrame ();
 }
 
 /*!

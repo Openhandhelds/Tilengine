@@ -317,19 +317,6 @@ int TLN_GetHeight (void)
 
 /*!
  * \brief
- * Returns the pixel format of the framebuffer
- * 
- * \see
- * TLN_InitBPP()
- */
-int TLN_GetBPP (void)
-{
-	TLN_SetLastError (TLN_ERR_OK);
-	return 32;
-}
-
-/*!
- * \brief
  * Sets the output surface for rendering
  * 
  * \param data
@@ -382,37 +369,18 @@ int TLN_GetRenderTargetPitch (void)
 	return engine->framebuffer.pitch;
 }
 
-/*!
- * \brief
- * Draws the frame to the previously specified render target
- * 
- * \param time
- * timestamp for animation control
- * 
- * \remarks
- * the timestamp value meaning is application defined, but its units must match the same used
- * in the sequences xml file. It usually is the frame number or millisecond count
- * 
- * \see
- * TLN_SetRenderTarget()
- */
-void TLN_UpdateFrame (int time)
-{
-	TLN_BeginFrame (time);
-	while (TLN_DrawNextScanline ()){}
-	TLN_SetLastError (TLN_ERR_OK);
-}
-
-/*!
- * \brief Starts active rendering of the current frame
- * \param time Timestamp value
- * \see TLN_DrawNextScanline(), TLN_BeginWindowFrame(), TLN_EndWindowFrame()
- */
-void TLN_BeginFrame (int time)
+/* Starts active rendering of the current frame */
+static void BeginFrame (int frame)
 {
 	/* update active animations */
 	List* list;
 	int index;
+
+	/* autoincrement if 0 */
+	if (frame != 0)
+		engine->frame = frame;
+	else
+		engine->frame += 1;
 
 	/* color cycle animations */
 	list = &engine->list_animations;
@@ -420,7 +388,7 @@ void TLN_BeginFrame (int time)
 	while (index != -1)
 	{
 		Animation* animation = &engine->animations[index];
-		UpdateAnimation(animation, time);
+		UpdateAnimation(animation, engine->frame);
 		index = animation->list_node.next;
 	}
 
@@ -432,7 +400,7 @@ void TLN_BeginFrame (int time)
 		Sprite* sprite = &engine->sprites[index];
 		sprite->collision = false;
 		if (sprite->animation.enabled)
-			UpdateAnimation(&sprite->animation, time);
+			UpdateAnimation(&sprite->animation, engine->frame);
 		index = sprite->list_node.next;
 	}
 
@@ -444,14 +412,30 @@ void TLN_BeginFrame (int time)
 		{
 			int c;
 			for (c = 0; c < tileset->sp->num_sequences; c += 1)
-				UpdateAnimation(&tileset->animations[c], time);
+				UpdateAnimation(&tileset->animations[c], engine->frame);
 		}
 	}
 
 	/* frame callback */
 	engine->line = 0;
-	if (engine->frame)
-		engine->frame (time);
+	if (engine->cb_frame)
+		engine->cb_frame (engine->frame);
+}
+
+/*!
+ * \brief
+ * Draws the frame to the previously specified render target
+ *
+ * \param frame Optional frame number. Set to 0 to autoincrement from previous value
+ *
+ * \see
+ * TLN_SetRenderTarget()
+ */
+void TLN_UpdateFrame(int frame)
+{
+	BeginFrame(frame);
+	while (DrawScanline()) {}
+	TLN_SetLastError(TLN_ERR_OK);
 }
 
 /*!
@@ -499,7 +483,7 @@ int TLN_GetNumSprites (void)
 void TLN_SetRasterCallback (void (*callback)(int))
 {
 	TLN_SetLastError (TLN_ERR_OK);
-	engine->raster = callback;
+	engine->cb_raster = callback;
 }
 
 /*!
@@ -512,7 +496,7 @@ void TLN_SetRasterCallback (void (*callback)(int))
 void TLN_SetFrameCallback (void (*callback)(int))
 {
 	TLN_SetLastError (TLN_ERR_OK);
-	engine->frame = callback;
+	engine->cb_frame = callback;
 }
 
 /*!

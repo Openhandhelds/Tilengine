@@ -33,7 +33,6 @@ enum
 
 int main(int argc, char* argv[])
 {
-	int frame = 0;
 	TLN_Tilemap foreground;
 	TLN_Bitmap middleground, background;
 	TLN_ObjectList props_list;
@@ -90,7 +89,7 @@ int main(int argc, char* argv[])
 	ok = TLN_GetListObject(props_list, &info);
 	while (ok)
 	{
-		printf("object id=%d gid=%d x=%d y=%d w=%d h=%d\n", info.id, info.gid, info.x, info.y, info.width, info.height);
+		printf("object id=%d name=\"%s\" type=%d gid=%d x=%d y=%d w=%d h=%d\n", info.id, info.name, info.type, info.gid, info.x, info.y, info.width, info.height);
 		ok = TLN_GetListObject(props_list, NULL);
 	}
 
@@ -115,8 +114,7 @@ int main(int argc, char* argv[])
 	TLN_CreateWindow(NULL, 0);
 	while (TLN_ProcessWindow())
 	{
-		TLN_DrawFrame(frame);
-		frame += 1;
+		TLN_DrawFrame(0);
 
 		/* move 3 pixels right/left main layer */
 		if (TLN_GetInput(INPUT_LEFT) && xworld > 0)
@@ -134,8 +132,15 @@ int main(int argc, char* argv[])
 			oldx = xworld;
 		}
 	}
-	TLN_DeleteWindow();
+
+	/* release resources */
+	TLN_DeleteTilemap(foreground);
+	TLN_DeleteBitmap(middleground);
 	TLN_CloseResourcePack();
+	TLN_DeleteSpriteset(atlas);
+	TLN_DeleteObjectList(props_list);
+
+	TLN_DeleteWindow();
 	TLN_Deinit();
 	return 0;
 }

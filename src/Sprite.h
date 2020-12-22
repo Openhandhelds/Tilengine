@@ -44,13 +44,12 @@ typedef struct Sprite
 	rect_t			dstrect;
 	draw_t			mode;
 	uint8_t*		blend;
-	TLN_TileFlags	flags;
+	uint32_t		flags;
 	ScanDrawPtr		draw;
 	ScanBlitPtr		blitter;
 	bool			ok;
 	bool			do_collision;
 	bool			collision;
-	bool			masking;
 	TLN_Bitmap		rotation_bitmap;
 	ListNode		list_node;
 	Animation		animation;
