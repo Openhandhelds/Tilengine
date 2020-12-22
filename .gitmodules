@@ -1,0 +1,3 @@
+[submodule "include/cute"]
+	path = include/cute
+	url = https://github.com/Openhandhelds/cute_headers
